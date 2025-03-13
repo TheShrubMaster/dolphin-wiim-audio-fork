@@ -4,7 +4,6 @@
 #include "DolphinQt/Config/Mapping/MappingButton.h"
 
 #include <QApplication>
-#include <QFontMetrics>
 #include <QMouseEvent>
 #include <QString>
 
