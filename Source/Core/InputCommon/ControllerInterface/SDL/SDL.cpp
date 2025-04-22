@@ -350,7 +350,7 @@ bool InputBackend::HandleEventAndContinue(const SDL_Event& e)
   }
   else if (e.type == Common::KeyboardContext::s_sdl_init_event_type)
   {
-    if (const int error = SDL_InitSubSystem(SDL_INIT_VIDEO); error != 0)
+    if (!SDL_InitSubSystem(SDL_INIT_VIDEO))
     {
       ERROR_LOG_FMT(IOS_USB, "SDL failed to init subsystem to capture keyboard input: {}",
                     SDL_GetError());

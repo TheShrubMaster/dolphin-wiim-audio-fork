@@ -66,7 +66,7 @@ private:
 
   bool m_is_ready = false;
 #ifdef HAVE_SDL3
-  const u8* m_keyboard_state = nullptr;
+  const bool* m_keyboard_state = nullptr;
 #endif
 };
 }  // namespace Common
