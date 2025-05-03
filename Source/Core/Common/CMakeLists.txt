@@ -68,8 +68,6 @@ add_library(common
   FileUtil.h
   FixedSizeQueue.h
   Flag.h
-  FloatUtils.cpp
-  FloatUtils.h
   FormatUtil.h
   FPURoundMode.h
   GekkoDisassembler.cpp
