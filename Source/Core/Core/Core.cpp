@@ -130,7 +130,6 @@ static Common::Event s_cpu_thread_job_finished;
 
 static thread_local bool tls_is_cpu_thread = false;
 static thread_local bool tls_is_gpu_thread = false;
-static thread_local bool tls_is_host_thread = false;
 
 static void EmuThread(Core::System& system, std::unique_ptr<BootParameters> boot,
                       WindowSystemInfo wsi);
@@ -212,11 +211,6 @@ bool IsCPUThread()
 bool IsGPUThread()
 {
   return tls_is_gpu_thread;
-}
-
-bool IsHostThread()
-{
-  return tls_is_host_thread;
 }
 
 bool WantsDeterminism()
@@ -331,16 +325,6 @@ void DeclareAsGPUThread()
 void UndeclareAsGPUThread()
 {
   tls_is_gpu_thread = false;
-}
-
-void DeclareAsHostThread()
-{
-  tls_is_host_thread = true;
-}
-
-void UndeclareAsHostThread()
-{
-  tls_is_host_thread = false;
 }
 
 // For the CPU Thread only.
