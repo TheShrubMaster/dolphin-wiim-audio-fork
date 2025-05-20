@@ -91,9 +91,9 @@ void PPCSymbolDB::AddKnownSymbol(const Core::CPUThreadGuard& guard, u32 startAdd
   }
 }
 
-void PPCSymbolDB::AddKnownNote(u32 startAddr, u32 size, const std::string& name)
+void PPCSymbolDB::AddKnownNote(u32 start_addr, u32 size, const std::string& name)
 {
-  auto iter = m_notes.find(startAddr);
+  auto iter = m_notes.find(start_addr);
 
   if (iter != m_notes.end())
   {
@@ -106,10 +106,10 @@ void PPCSymbolDB::AddKnownNote(u32 startAddr, u32 size, const std::string& name)
   {
     Common::Note tf;
     tf.name = name;
-    tf.address = startAddr;
+    tf.address = start_addr;
     tf.size = size;
 
-    m_notes[startAddr] = tf;
+    m_notes[start_addr] = tf;
   }
 }
 
@@ -179,14 +179,14 @@ Common::Note* PPCSymbolDB::GetNoteFromAddr(u32 addr)
   return nullptr;
 }
 
-void PPCSymbolDB::DeleteFunction(u32 startAddress)
+void PPCSymbolDB::DeleteFunction(u32 start_address)
 {
-  m_functions.erase(startAddress);
+  m_functions.erase(start_address);
 }
 
-void PPCSymbolDB::DeleteNote(u32 startAddress)
+void PPCSymbolDB::DeleteNote(u32 start_address)
 {
-  m_notes.erase(startAddress);
+  m_notes.erase(start_address);
 }
 
 std::string_view PPCSymbolDB::GetDescription(u32 addr)
@@ -516,14 +516,11 @@ bool PPCSymbolDB::LoadMap(const Core::CPUThreadGuard& guard, const std::string& 
       if (good)
       {
         ++good_count;
-        if (section_name == ".text" || section_name == ".init")
-          AddKnownSymbol(guard, vaddress, size, name_string, object_filename_string,
-                         Common::Symbol::Type::Function);
-        else if (section_name == ".data")
-          AddKnownSymbol(guard, vaddress, size, name_string, object_filename_string,
-                         Common::Symbol::Type::Data);
-        else if (section_name == ".note")
+
+        if (section_name == ".note")
           AddKnownNote(vaddress, size, name_string);
+        else
+          AddKnownSymbol(guard, vaddress, size, name_string, object_filename_string, type);
       }
       else
       {
@@ -586,9 +583,8 @@ bool PPCSymbolDB::SaveSymbolMap(const std::string& filename) const
   for (const auto& symbol : note_symbols)
   {
     // Write symbol address, size, virtual address, alignment, name
-    std::string line = fmt::format("{:08x} {:06x} {:08x} {} {}", symbol.address, symbol.size,
-                                   symbol.address, 0, symbol.name);
-    line += "\n";
+    const std::string line = fmt::format("{:08x} {:06x} {:08x} {} {}\n", symbol.address,
+                                         symbol.size, symbol.address, 0, symbol.name);
     file.WriteString(line);
   }
 

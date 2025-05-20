@@ -449,7 +449,7 @@ u32 PPCDebugInterface::GetNoteColor(const Core::CPUThreadGuard* guard, u32 addre
       0xcceecc,  // light green
       0xeeeece,  // light yellow
   };
-  Common::Note* note = m_ppc_symbol_db.GetNoteFromAddr(address);
+  const Common::Note* note = m_ppc_symbol_db.GetNoteFromAddr(address);
   return colors[note->layer % 3];
 }
 // =============

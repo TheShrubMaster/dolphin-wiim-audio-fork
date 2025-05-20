@@ -888,10 +888,10 @@ void CodeViewWidget::OnPPCComparison()
 void CodeViewWidget::OnAddFunction()
 {
   const u32 addr = GetContextAddress();
-  int confirm = QMessageBox::warning(this, tr("Add Function Symbol"),
-                                     tr("Force new function symbol to be made at ") +
-                                         QString::number(addr, 16) + tr("?"),
-                                     QMessageBox::Ok | QMessageBox::Cancel);
+  int confirm =
+      QMessageBox::warning(this, tr("Add Function Symbol"),
+                           tr("Force new function symbol to be made at %1?").arg(addr, 0, 16),
+                           QMessageBox::Ok | QMessageBox::Cancel);
 
   if (confirm != QMessageBox::Ok)
     return;
@@ -946,7 +946,7 @@ void CodeViewWidget::OnEditSymbol()
   u32 size = symbol->size;
   const u32 symbol_address = symbol->address;
 
-  EditSymbolDialog* dialog = new EditSymbolDialog(this, symbol_address, size, name);
+  EditSymbolDialog* dialog = new EditSymbolDialog(this, symbol_address, &size, &name);
 
   if (dialog->exec() != QDialog::Accepted)
     return;
@@ -976,11 +976,11 @@ void CodeViewWidget::OnDeleteSymbol()
   if (symbol == nullptr)
     return;
 
-  int confirm =
-      QMessageBox::warning(this, tr("Delete Function Symbol"),
-                           tr("Delete function symbol: ") + QString::fromStdString(symbol->name) +
-                               tr("\nat ") + QString::number(addr, 16) + tr("?"),
-                           QMessageBox::Ok | QMessageBox::Cancel);
+  int confirm = QMessageBox::warning(this, tr("Delete Function Symbol"),
+                                     tr("Delete function symbol: %1\nat %2?")
+                                         .arg(QString::fromStdString(symbol->name))
+                                         .arg(addr, 0, 16),
+                                     QMessageBox::Ok | QMessageBox::Cancel);
 
   if (confirm != QMessageBox::Ok)
     return;
@@ -996,7 +996,7 @@ void CodeViewWidget::OnAddNote()
   std::string name = "";
   u32 size = 4;
 
-  EditSymbolDialog* dialog = new EditSymbolDialog(this, note_address, size, name);
+  EditSymbolDialog* dialog = new EditSymbolDialog(this, note_address, &size, &name);
 
   if (dialog->exec() != QDialog::Accepted)
     return;
@@ -1039,7 +1039,7 @@ void CodeViewWidget::OnEditNote()
     note_address = context_address;
   }
 
-  EditSymbolDialog* dialog = new EditSymbolDialog(this, note_address, size, name);
+  EditSymbolDialog* dialog = new EditSymbolDialog(this, note_address, &size, &name);
 
   if (dialog->exec() != QDialog::Accepted)
     return;
@@ -1065,8 +1065,9 @@ void CodeViewWidget::OnDeleteNote()
     return;
 
   int confirm = QMessageBox::warning(this, tr("Delete Note"),
-                                     tr("Delete Note: ") + QString::fromStdString(note->name) +
-                                         tr("at ") + QString::number(context_address, 16) + tr("?"),
+                                     tr("Delete Note: %1\nat %2?")
+                                         .arg(QString::fromStdString(note->name))
+                                         .arg(context_address, 0, 16),
                                      QMessageBox::Ok | QMessageBox::Cancel);
 
   if (confirm != QMessageBox::Ok)

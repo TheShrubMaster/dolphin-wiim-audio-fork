@@ -122,7 +122,7 @@ void CodeWidget::CreateWidgets()
   m_box_splitter = new QSplitter(Qt::Vertical);
   m_box_splitter->setStyleSheet(BOX_SPLITTER_STYLESHEET);
 
-  auto add_search_line_edit = [this](const QString& name, QListWidget* list_widget) {
+  auto add_search_line_edit = [this](const QString& name, QWidget* list_widget) {
     auto* widget = new QWidget;
     auto* line_layout = new QGridLayout;
     auto* label = new QLabel(name);
@@ -141,22 +141,12 @@ void CodeWidget::CreateWidgets()
   m_search_callstack = add_search_line_edit(tr("Callstack"), m_callstack_list);
 
   // Symbols
-  m_search_symbols = new QLineEdit;
-  auto* s_label = new QLabel(tr("Symbols"));
-
   auto* symbols_tab = new QTabWidget;
   m_symbols_list = new QListWidget;
   m_note_list = new QListWidget;
   symbols_tab->addTab(m_symbols_list, tr("Symbols"));
   symbols_tab->addTab(m_note_list, tr("Notes"));
-
-  auto* s_layout = new QGridLayout;
-  auto* s_widget = new QWidget;
-  s_widget->setLayout(s_layout);
-  s_layout->addWidget(s_label, 0, 0);
-  s_layout->addWidget(m_search_symbols, 0, 1);
-  s_layout->addWidget(symbols_tab, 1, 0, -1, -1);
-  m_box_splitter->addWidget(s_widget);
+  m_search_symbols = add_search_line_edit(tr("Symbols"), symbols_tab);
 
   // Function calls
   m_function_calls_list = new QListWidget;
@@ -457,14 +447,14 @@ void CodeWidget::UpdateSymbols()
 
 void CodeWidget::UpdateNotes()
 {
-  QString selection = m_note_list->selectedItems().isEmpty() ?
-                          QStringLiteral("") :
-                          m_note_list->selectedItems()[0]->text();
+  const QString selection = m_note_list->selectedItems().isEmpty() ?
+                                QStringLiteral("") :
+                                m_note_list->selectedItems()[0]->text();
   m_note_list->clear();
 
   for (const auto& note : m_ppc_symbol_db.Notes())
   {
-    QString name = QString::fromStdString(note.second.name);
+    const QString name = QString::fromStdString(note.second.name);
 
     auto* item = new QListWidgetItem(name);
     if (name == selection)
