@@ -331,7 +331,19 @@ void CodeViewWidget::Update(const Core::CPUThreadGuard* guard)
 
     std::string ins = (split == std::string::npos ? disas : disas.substr(0, split));
     std::string param = (split == std::string::npos ? "" : disas.substr(split + 1));
-    const std::string_view desc = debug_interface.GetDescription(addr);
+    std::string desc;
+    int color = 0xFFFFFF;
+    const Common::Note* note = m_ppc_symbol_db.GetNoteFromAddr(addr);
+    if (note == nullptr)
+    {
+      desc = debug_interface.GetDescription(addr);
+      color = debug_interface.GetColor(guard, addr);
+    }
+    else
+    {
+      desc = note->name;
+      color = debug_interface.GetNoteColor(guard, addr);
+    }
 
     // Adds whitespace and a minimum size to ins and param. Helps to prevent frequent resizing while
     // scrolling.
