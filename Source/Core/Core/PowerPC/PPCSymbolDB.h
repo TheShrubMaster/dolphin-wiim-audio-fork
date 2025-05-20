@@ -30,6 +30,8 @@ public:
   Common::Symbol* GetSymbolFromAddr(u32 addr) override;
   Common::Note* GetNoteFromAddr(u32 addr);
   void DetermineNoteLayers();
+  void DeleteFunction(u32 startAddress);
+  void DeleteNote(u32 startAddress);
 
   std::string_view GetDescription(u32 addr);
 
