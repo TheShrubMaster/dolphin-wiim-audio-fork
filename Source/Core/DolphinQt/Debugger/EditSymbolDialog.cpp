@@ -25,18 +25,20 @@ EditSymbolDialog::EditSymbolDialog(QWidget* parent, const u32 symbol_address, u3
 void EditSymbolDialog::CreateWidgets()
 {
   m_reset_button = new QPushButton(tr("Reset"));
+  m_delete_button = new QPushButton(tr("Delete"));
   m_buttons = new QDialogButtonBox(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
   m_buttons->addButton(m_reset_button, QDialogButtonBox::ResetRole);
+  m_buttons->addButton(m_delete_button, QDialogButtonBox::DestructiveRole);
 
-  auto* info_label =
+  QLabel* info_label =
       new QLabel(tr("Editing symbol starting at: ") + QString::number(m_symbol_address, 16));
   m_name_edit = new QLineEdit();
   m_name_edit->setPlaceholderText(tr("Symbol name"));
 
   auto* size_layout = new QHBoxLayout;
-  auto* address_end_label = new QLabel(tr("End Address"));
-  auto* size_lines_label = new QLabel(tr("Lines"));
-  auto* size_hex_label = new QLabel(tr("Size: 0x"));
+  QLabel* address_end_label = new QLabel(tr("End Address"));
+  QLabel* size_lines_label = new QLabel(tr("Lines"));
+  QLabel* size_hex_label = new QLabel(tr("Size: 0x"));
   m_address_end_edit = new QLineEdit();
   m_size_lines_spin = new QSpinBox();
   m_size_hex_edit = new QLineEdit();
@@ -122,6 +124,7 @@ void EditSymbolDialog::ConnectWidgets()
   connect(m_buttons, &QDialogButtonBox::accepted, this, &EditSymbolDialog::Accepted);
   connect(m_buttons, &QDialogButtonBox::rejected, this, &EditSymbolDialog::reject);
   connect(m_reset_button, &QPushButton::pressed, this, &EditSymbolDialog::FillFunctionData);
+  connect(m_delete_button, &QPushButton::pressed, this, &EditSymbolDialog::NotifyDelete);
 }
 
 void EditSymbolDialog::Accepted()
@@ -137,5 +140,13 @@ void EditSymbolDialog::Accepted()
   if (good && *m_symbol_size != size)
     *m_symbol_size = size;
 
+  QDialog::accept();
+}
+
+void EditSymbolDialog::NotifyDelete()
+{
+  // Returning an empty name will ask the user if they want to delete the symbol. Also applies to
+  // Accepted().
+  *m_symbol_name = "";
   QDialog::accept();
 }

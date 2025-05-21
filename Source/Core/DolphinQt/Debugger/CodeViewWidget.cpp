@@ -665,6 +665,12 @@ void CodeViewWidget::OnContextMenu()
     action->setEnabled(valid_load_store);
   }
 
+  auto* note = m_ppc_symbol_db.GetNoteFromAddr(addr);
+  note_edit_action->setEnabled(note != nullptr);
+  // A note cannot be added ontop of the starting address of another note.
+  if (note != nullptr && note->address == addr)
+    note_add_action->setEnabled(false);
+
   restore_action->setEnabled(running &&
                              m_system.GetPowerPC().GetDebugInterface().HasEnabledPatch(addr));
 
@@ -998,7 +1004,7 @@ void CodeViewWidget::OnAddNote()
 
   EditSymbolDialog* dialog = new EditSymbolDialog(this, note_address, &size, &name);
 
-  if (dialog->exec() != QDialog::Accepted)
+  if (dialog->exec() != QDialog::Accepted || name.empty())
     return;
 
   m_ppc_symbol_db.AddKnownNote(note_address, size, name);
@@ -1024,30 +1030,25 @@ void CodeViewWidget::OnEditNote()
   const u32 context_address = GetContextAddress();
   Common::Note* const note = m_ppc_symbol_db.GetNoteFromAddr(context_address);
 
-  std::string name = "";
-  u32 size = 4;
-  u32 note_address;
+  if (note == nullptr)
+    return;
 
-  if (note != nullptr)
-  {
-    name = note->name;
-    size = note->size;
-    note_address = note->address;
-  }
-  else
-  {
-    note_address = context_address;
-  }
+  std::string name = note->name;
+  u32 size = note->size;
+  const u32 note_address = note->address;
 
   EditSymbolDialog* dialog = new EditSymbolDialog(this, note_address, &size, &name);
 
   if (dialog->exec() != QDialog::Accepted)
     return;
 
-  if (note != nullptr && name.empty())
+  if (name.empty())
+  {
     OnDeleteNote();
+    return;
+  }
 
-  if (note == nullptr || note->name != name || note->size != size)
+  if (note->name != name || note->size != size)
   {
     m_ppc_symbol_db.AddKnownNote(note_address, size, name);
     m_ppc_symbol_db.DetermineNoteLayers();

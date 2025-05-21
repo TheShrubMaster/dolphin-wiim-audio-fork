@@ -25,6 +25,7 @@ private:
   void FillFunctionData();
   void UpdateAddressData(u32 size);
   void Accepted();
+  void NotifyDelete();
 
   QLineEdit* m_name_edit;
   QSpinBox* m_size_lines_spin;
@@ -32,6 +33,7 @@ private:
   QLineEdit* m_address_end_edit;
 
   QPushButton* m_reset_button;
+  QPushButton* m_delete_button;
   QDialogButtonBox* m_buttons;
 
   std::string* m_symbol_name;

@@ -160,7 +160,7 @@ Common::Note* PPCSymbolDB::GetNoteFromAddr(u32 addr)
   auto itn = m_notes.lower_bound(addr);
 
   // If the address is exactly the start address of a symbol, we're done.
-  if (itn->second.address == addr)
+  if (itn != m_notes.end() && itn->second.address == addr)
     return &itn->second;
 
   // Otherwise, check whether the address is within the bounds of a symbol.
@@ -530,6 +530,7 @@ bool PPCSymbolDB::LoadMap(const Core::CPUThreadGuard& guard, const std::string& 
   }
 
   Index();
+  DetermineNoteLayers();
   NOTICE_LOG_FMT(SYMBOLS, "{} symbols loaded, {} symbols ignored.", good_count, bad_count);
   return true;
 }
