@@ -191,8 +191,10 @@ void KeyboardContext::Quit()
 
 void* KeyboardContext::HandlerState::GetHandle() const
 {
+#ifdef _WIN32
   if (is_rendering_to_main && !is_fullscreen)
     return main_handle;
+#endif
   return renderer_handle;
 }
 
