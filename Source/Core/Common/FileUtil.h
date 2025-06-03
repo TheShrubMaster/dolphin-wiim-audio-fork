@@ -28,11 +28,12 @@ enum
 {
   D_USER_IDX,
   D_GCUSER_IDX,
-  D_WIIROOT_IDX,          // always points to User/Wii or global user-configured directory
-  D_SESSION_WIIROOT_IDX,  // may point to minimal temporary directory for determinism
-  D_CONFIG_IDX,           // global settings
-  D_GAMESETTINGS_IDX,     // user-specified settings which override both the global and the default
-                          // settings (per game)
+  D_WIIROOT_IDX,           // always points to User/Wii or global user-configured directory
+  D_SESSION_WIIROOT_IDX,   // may point to minimal temporary directory for determinism
+  D_CONFIG_IDX,            // global settings
+  D_APPLICATIONSTATE_IDX,  // data that is not portable (window positions, open recent, etc.)
+  D_GAMESETTINGS_IDX,      // user-specified settings which override both the global and the default
+                           // settings (per game)
   D_SKYLANDERS_IDX,
 
   D_MAPS_IDX,
@@ -96,6 +97,7 @@ enum
   F_FREELOOKCONFIG_IDX,
   F_GBABIOS_IDX,
   F_RETROACHIEVEMENTSCONFIG_IDX,
+  F_QSETTINGSCONFIG_IDX,
   NUM_PATH_INDICES
 };
 
@@ -233,6 +235,18 @@ std::string GetThemeDir(const std::string& theme_name);
 
 // Returns the path to where the sys file are
 const std::string& GetSysDirectory();
+
+// Returns the last modified time of the file or directory at the given path.
+std::chrono::system_clock::time_point GetLastModifiedTime(const std::string& path);
+
+// Converts a file time to a system time point.
+std::chrono::system_clock::time_point FileTimeToSysTime(std::filesystem::file_time_type file_time);
+
+// Migrates a file from old_path to new_path.
+void MigrateFile(const std::string& old_path, const std::string& new_path);
+
+// Migrates a directory from old_path to new_path.
+void MigrateDirectory(const std::string& old_path, const std::string& new_path);
 
 #ifdef ANDROID
 void SetSysDirectory(const std::string& path);
