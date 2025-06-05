@@ -176,19 +176,19 @@ bool WASAPIStream::SetRunning(bool running)
 
     HRESULT result;
 
-    if (Config::Get(Config::MAIN_WASAPI_DEVICE) == "default")
+    if (m_device == "default")
     {
       result = m_enumerator->GetDefaultAudioEndpoint(eRender, eConsole, device.GetAddressOf());
     }
     else
     {
       result = S_OK;
-      device = GetDeviceByName(Config::Get(Config::MAIN_WASAPI_DEVICE));
+      device = GetDeviceByName(m_device);
 
       if (!device)
       {
         ERROR_LOG_FMT(AUDIO, "Can't find device '{}', falling back to default",
-                      Config::Get(Config::MAIN_WASAPI_DEVICE));
+                      m_device);
         result = m_enumerator->GetDefaultAudioEndpoint(eRender, eConsole, device.GetAddressOf());
       }
     }
