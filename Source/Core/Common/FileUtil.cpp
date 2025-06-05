@@ -798,6 +798,74 @@ const std::string& GetSysDirectory()
   return sys_directory;
 }
 
+std::chrono::system_clock::time_point GetLastModifiedTime(const std::string& path)
+{
+  std::error_code error;
+  const fs::file_time_type last_write_time = fs::last_write_time(StringToPath(path), error);
+  if (error)
+  {
+    ERROR_LOG_FMT(COMMON, "GetLastModifiedTime: failed on {}: {}", path, error.message());
+    return std::chrono::system_clock::time_point{};
+  }
+
+  return FileTimeToSysTime(last_write_time);
+}
+
+std::chrono::system_clock::time_point FileTimeToSysTime(fs::file_time_type file_time)
+{
+#ifdef _WIN32
+  return std::chrono::clock_cast<std::chrono::system_clock>(file_time);
+#else
+  // Note: all compilers should switch to chrono::clock_cast
+  // once it is available for use
+  const auto system_time_now = std::chrono::system_clock::now();
+  const auto file_time_now = decltype(file_time)::clock::now();
+  return std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+      file_time - file_time_now + system_time_now);
+#endif
+}
+
+void MigrateFile(const std::string& old_path, const std::string& new_path)
+{
+  if (!IsFile(old_path) || old_path == new_path)
+    return;
+
+  DEBUG_LOG_FMT(COMMON, "Migrating file from {} to {}", old_path, new_path);
+
+  if (!Exists(new_path) ||
+      File::GetLastModifiedTime(old_path) > File::GetLastModifiedTime(new_path))
+  {
+    MoveWithOverwrite(old_path, new_path);
+  }
+  else
+  {
+    Delete(old_path);
+  }
+}
+
+void MigrateDirectory(const std::string& old_path, const std::string& new_path)
+{
+  if (!IsDirectory(old_path) || old_path == new_path)
+    return;
+  if (!Exists(new_path) && (!CreateDirs(new_path)))
+    return;
+
+  DEBUG_LOG_FMT(COMMON, "Migrating directory from {} to {}", old_path, new_path);
+
+  FSTEntry old_entry = ScanDirectoryTree(old_path, true);
+  for (const auto& child : old_entry.children)
+  {
+    const std::string old_child_path = child.physicalName;
+    const std::string new_child_path = new_path + DIR_SEP + child.virtualName;
+
+    if (child.isDirectory)
+      MigrateDirectory(old_child_path, new_child_path);
+    else
+      MigrateFile(old_child_path, new_child_path);
+  }
+  DeleteDirRecursively(old_path);
+}
+
 #ifdef ANDROID
 void SetSysDirectory(const std::string& path)
 {
@@ -847,6 +915,7 @@ static void RebuildUserDirectories(unsigned int dir_index)
     s_user_paths[D_CONFIG_IDX] = s_user_paths[D_USER_IDX] + CONFIG_DIR DIR_SEP;
     s_user_paths[D_GAMESETTINGS_IDX] = s_user_paths[D_USER_IDX] + GAMESETTINGS_DIR DIR_SEP;
     s_user_paths[D_MAPS_IDX] = s_user_paths[D_USER_IDX] + MAPS_DIR DIR_SEP;
+    s_user_paths[D_APPLICATIONSTATE_IDX] = s_user_paths[D_USER_IDX] + DIR_SEP;
     s_user_paths[D_CACHE_IDX] = s_user_paths[D_USER_IDX] + CACHE_DIR DIR_SEP;
     s_user_paths[D_COVERCACHE_IDX] = s_user_paths[D_CACHE_IDX] + COVERCACHE_DIR DIR_SEP;
     s_user_paths[D_REDUMPCACHE_IDX] = s_user_paths[D_CACHE_IDX] + REDUMPCACHE_DIR DIR_SEP;
@@ -871,7 +940,7 @@ static void RebuildUserDirectories(unsigned int dir_index)
         s_user_paths[D_DUMPDEBUG_IDX] + DUMP_DEBUG_BRANCHWATCH_DIR DIR_SEP;
     s_user_paths[D_DUMPDEBUG_JITBLOCKS_IDX] =
         s_user_paths[D_DUMPDEBUG_IDX] + DUMP_DEBUG_JITBLOCKS_DIR DIR_SEP;
-    s_user_paths[D_LOGS_IDX] = s_user_paths[D_USER_IDX] + LOGS_DIR DIR_SEP;
+    s_user_paths[D_LOGS_IDX] = s_user_paths[D_APPLICATIONSTATE_IDX] + LOGS_DIR DIR_SEP;
     s_user_paths[D_MAILLOGS_IDX] = s_user_paths[D_LOGS_IDX] + MAIL_LOGS_DIR DIR_SEP;
     s_user_paths[D_THEMES_IDX] = s_user_paths[D_USER_IDX] + THEMES_DIR DIR_SEP;
     s_user_paths[D_STYLES_IDX] = s_user_paths[D_USER_IDX] + STYLES_DIR DIR_SEP;
@@ -888,6 +957,7 @@ static void RebuildUserDirectories(unsigned int dir_index)
     s_user_paths[F_GCKEYBOARDCONFIG_IDX] = s_user_paths[D_CONFIG_IDX] + GCKEYBOARD_CONFIG;
     s_user_paths[F_GFXCONFIG_IDX] = s_user_paths[D_CONFIG_IDX] + GFX_CONFIG;
     s_user_paths[F_LOGGERCONFIG_IDX] = s_user_paths[D_CONFIG_IDX] + LOGGER_CONFIG;
+    s_user_paths[F_QSETTINGSCONFIG_IDX] = s_user_paths[D_CONFIG_IDX] + QSETTINGS_CONFIG;
     s_user_paths[F_DUALSHOCKUDPCLIENTCONFIG_IDX] =
         s_user_paths[D_CONFIG_IDX] + DUALSHOCKUDPCLIENT_CONFIG;
     s_user_paths[F_FREELOOKCONFIG_IDX] = s_user_paths[D_CONFIG_IDX] + FREELOOK_CONFIG;
@@ -930,6 +1000,19 @@ static void RebuildUserDirectories(unsigned int dir_index)
     s_user_paths[F_FREELOOKCONFIG_IDX] = s_user_paths[D_CONFIG_IDX] + FREELOOK_CONFIG;
     s_user_paths[F_RETROACHIEVEMENTSCONFIG_IDX] =
         s_user_paths[D_CONFIG_IDX] + RETROACHIEVEMENTS_CONFIG;
+    break;
+
+  case D_APPLICATIONSTATE_IDX:
+    s_user_paths[F_QSETTINGSCONFIG_IDX] = s_user_paths[D_APPLICATIONSTATE_IDX] + QSETTINGS_CONFIG;
+    s_user_paths[D_LOGS_IDX] = s_user_paths[D_APPLICATIONSTATE_IDX] + LOGS_DIR DIR_SEP;
+    s_user_paths[F_MAINLOG_IDX] = s_user_paths[D_LOGS_IDX] + MAIN_LOG;
+    s_user_paths[D_MAILLOGS_IDX] = s_user_paths[D_LOGS_IDX] + MAIL_LOGS_DIR DIR_SEP;
+    // The logs have moved to the state directory, so move the old ones.
+    // TODO: remove that someday.
+    MigrateDirectory(s_user_paths[D_USER_IDX] + LOGS_DIR DIR_SEP, s_user_paths[D_LOGS_IDX]);
+    // The QSettings config file has moved to the state directory, so move the old one.
+    // TODO: remove that someday.
+    MigrateFile(s_user_paths[D_CONFIG_IDX] + QSETTINGS_CONFIG, s_user_paths[F_QSETTINGSCONFIG_IDX]);
     break;
 
   case D_CACHE_IDX:
