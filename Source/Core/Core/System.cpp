@@ -4,6 +4,7 @@
 #include "Core/System.h"
 
 #include <memory>
+#include <array>
 
 #include "AudioCommon/SoundStream.h"
 #include "Core/Config/MainSettings.h"
@@ -60,6 +61,7 @@ struct System::Impl
   }
 
   std::unique_ptr<SoundStream> m_sound_stream;
+  std::array<std::unique_ptr<SoundStream>, 4> m_wiimote_sound_streams;
   bool m_sound_stream_running = false;
   bool m_audio_dump_started = false;
 
@@ -123,6 +125,19 @@ SoundStream* System::GetSoundStream() const
 void System::SetSoundStream(std::unique_ptr<SoundStream> sound_stream)
 {
   m_impl->m_sound_stream = std::move(sound_stream);
+}
+
+SoundStream* System::GetWiimoteSoundStream(size_t index) const
+{
+  if (index >= m_impl->m_wiimote_sound_streams.size())
+    return nullptr;
+  return m_impl->m_wiimote_sound_streams[index].get();
+}
+
+void System::SetWiimoteSoundStream(size_t index, std::unique_ptr<SoundStream> stream)
+{
+  if (index < m_impl->m_wiimote_sound_streams.size())
+    m_impl->m_wiimote_sound_streams[index] = std::move(stream);
 }
 
 bool System::IsSoundStreamRunning() const
