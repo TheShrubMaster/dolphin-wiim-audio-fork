@@ -31,6 +31,8 @@ bool SupportsLatencyControl(std::string_view backend);
 bool SupportsVolumeChanges(std::string_view backend);
 void UpdateSoundStream(Core::System& system);
 void SetSoundStreamRunning(Core::System& system, bool running);
+void InitWiimoteSoundStreams(Core::System& system);
+void ShutdownWiimoteSoundStreams(Core::System& system);
 void SendAIBuffer(Core::System& system, const short* samples, unsigned int num_samples);
 void StartAudioDump(Core::System& system);
 void StopAudioDump(Core::System& system);

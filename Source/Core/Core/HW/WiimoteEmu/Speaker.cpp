@@ -4,6 +4,7 @@
 #include "Core/HW/WiimoteEmu/Speaker.h"
 
 #include <cassert>
+#include <algorithm>
 
 #include "AudioCommon/AudioCommon.h"
 
@@ -13,6 +14,7 @@
 #include "Core/ConfigManager.h"
 #include "Core/HW/WiimoteEmu/WiimoteEmu.h"
 #include "Core/System.h"
+#include "Core/Config/MainSettings.h"
 
 #include "InputCommon/ControllerEmu/ControlGroup/ControlGroup.h"
 #include "InputCommon/ControllerEmu/Setting/NumericSetting.h"
@@ -127,7 +129,11 @@ void SpeakerLogic::SpeakerData(const u8* data, int length, float speaker_pan)
   const u32 r_volume = std::min(u32(std::min(1.f + speaker_pan, 1.f) * volume), 255u);
 
   auto& system = Core::System::GetInstance();
-  SoundStream* sound_stream = system.GetSoundStream();
+  SoundStream* sound_stream = nullptr;
+  if (Config::Get(Config::MAIN_WIIMOTE_SEPARATE_AUDIO))
+    sound_stream = system.GetWiimoteSoundStream(m_index);
+  if (!sound_stream)
+    sound_stream = system.GetSoundStream();
 
   sound_stream->GetMixer()->SetWiimoteSpeakerVolume(l_volume, r_volume);
 

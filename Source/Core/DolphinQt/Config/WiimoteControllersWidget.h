@@ -70,6 +70,8 @@ private:
   QCheckBox* m_wiimote_continuous_scanning;
   QCheckBox* m_wiimote_real_balance_board;
   QCheckBox* m_wiimote_speaker_data;
+  QCheckBox* m_wiimote_separate_audio;
+  std::array<QComboBox*, 4> m_wiimote_device_boxes;
   QCheckBox* m_wiimote_ciface;
   QPushButton* m_wiimote_refresh;
   QLabel* m_bluetooth_unavailable;

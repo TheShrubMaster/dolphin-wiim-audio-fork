@@ -17,6 +17,9 @@
 
 #include <map>
 #include <optional>
+#ifdef _WIN32
+#include "AudioCommon/WASAPIStream.h"
+#endif
 
 #include "Common/Config/Config.h"
 #include "Common/WorkQueueThread.h"
@@ -200,12 +203,14 @@ void WiimoteControllersWidget::CreateLayout()
   m_wiimote_continuous_scanning = new QCheckBox(tr("Continuous Scanning"));
   m_wiimote_real_balance_board = new QCheckBox(tr("Real Balance Board"));
   m_wiimote_speaker_data = new QCheckBox(tr("Enable Speaker Data"));
+  m_wiimote_separate_audio = new QCheckBox(tr("Separate Speaker Output"));
   m_wiimote_ciface = new QCheckBox(tr("Connect Wii Remotes for Emulated Controllers"));
 
   m_wiimote_layout->setVerticalSpacing(7);
   m_wiimote_layout->setColumnMinimumWidth(0, GetRadioButtonIndicatorWidth() -
                                                  GetLayoutHorizontalSpacing(m_wiimote_layout));
   m_wiimote_layout->setColumnStretch(2, 1);
+  m_wiimote_layout->setColumnStretch(4, 1);
 
   // Passthrough BT
   m_wiimote_layout->addWidget(m_wiimote_passthrough, m_wiimote_layout->rowCount(), 0, 1, -1);
@@ -230,6 +235,12 @@ void WiimoteControllersWidget::CreateLayout()
   {
     auto* wm_label = m_wiimote_labels[i] = new QLabel(tr("Wii Remote %1").arg(i + 1));
     auto* wm_box = m_wiimote_boxes[i] = new QComboBox();
+    auto* wm_device = m_wiimote_device_boxes[i] = new QComboBox();
+#ifdef _WIN32
+    wm_device->addItem(tr("Default Device"), QStringLiteral("default"));
+    for (const auto& dev : WASAPIStream::GetAvailableDevices())
+      wm_device->addItem(QString::fromStdString(dev), QString::fromStdString(dev));
+#endif
     auto* wm_button = m_wiimote_buttons[i] = new NonDefaultQPushButton(tr("Configure"));
 
     for (const auto& item : {tr("None"), tr("Emulated Wii Remote"), tr("Real Wii Remote")})
@@ -239,10 +250,12 @@ void WiimoteControllersWidget::CreateLayout()
     m_wiimote_layout->addWidget(wm_label, wm_row, 1);
     m_wiimote_layout->addWidget(wm_box, wm_row, 2);
     m_wiimote_layout->addWidget(wm_button, wm_row, 3);
+    m_wiimote_layout->addWidget(wm_device, wm_row, 4);
   }
 
   m_wiimote_layout->addWidget(m_wiimote_real_balance_board, m_wiimote_layout->rowCount(), 1, 1, -1);
   m_wiimote_layout->addWidget(m_wiimote_speaker_data, m_wiimote_layout->rowCount(), 1, 1, -1);
+  m_wiimote_layout->addWidget(m_wiimote_separate_audio, m_wiimote_layout->rowCount(), 1, 1, -1);
 
   m_wiimote_layout->addWidget(m_wiimote_ciface, m_wiimote_layout->rowCount(), 0, 1, -1);
 
@@ -281,6 +294,8 @@ void WiimoteControllersWidget::ConnectWidgets()
           &WiimoteControllersWidget::SaveSettings);
   connect(m_wiimote_speaker_data, &QCheckBox::toggled, this,
           &WiimoteControllersWidget::SaveSettings);
+  connect(m_wiimote_separate_audio, &QCheckBox::toggled, this,
+          &WiimoteControllersWidget::SaveSettings);
   connect(m_bluetooth_adapters, &QComboBox::activated, this,
           &WiimoteControllersWidget::OnBluetoothPassthroughDeviceChanged);
   connect(m_bluetooth_adapters_refresh, &QPushButton::clicked, this,
@@ -298,6 +313,8 @@ void WiimoteControllersWidget::ConnectWidgets()
       SaveSettings();
       LoadSettings(Core::GetState(Core::System::GetInstance()));
     });
+    connect(m_wiimote_device_boxes[i], &QComboBox::currentIndexChanged, this,
+            &WiimoteControllersWidget::SaveSettings);
     connect(m_wiimote_buttons[i], &QPushButton::clicked, this,
             [this, i] { OnWiimoteConfigure(i); });
   }
@@ -401,11 +418,19 @@ void WiimoteControllersWidget::LoadSettings(Core::State state)
   {
     SignalBlocking(m_wiimote_boxes[i])
         ->setCurrentIndex(int(Config::Get(Config::GetInfoForWiimoteSource(int(i)))));
+#ifdef _WIN32
+    int device_index =
+        m_wiimote_device_boxes[i]->findData(QString::fromStdString(Config::Get(Config::MAIN_WIIMOTE_WASAPI_DEVICES[i])));
+    if (device_index >= 0)
+      SignalBlocking(m_wiimote_device_boxes[i])->setCurrentIndex(device_index);
+#endif
   }
   SignalBlocking(m_wiimote_real_balance_board)
       ->setChecked(Config::Get(Config::WIIMOTE_BB_SOURCE) == WiimoteSource::Real);
   SignalBlocking(m_wiimote_speaker_data)
       ->setChecked(Config::Get(Config::MAIN_WIIMOTE_ENABLE_SPEAKER));
+  SignalBlocking(m_wiimote_separate_audio)
+      ->setChecked(Config::Get(Config::MAIN_WIIMOTE_SEPARATE_AUDIO));
   SignalBlocking(m_wiimote_ciface)
       ->setChecked(Config::Get(Config::MAIN_CONNECT_WIIMOTES_FOR_CONTROLLER_INTERFACE));
   SignalBlocking(m_wiimote_continuous_scanning)
@@ -443,6 +468,7 @@ void WiimoteControllersWidget::LoadSettings(Core::State state)
   {
     m_wiimote_labels[i]->setEnabled(enable_emu_bt);
     m_wiimote_boxes[i]->setEnabled(enable_emu_bt && !running_netplay);
+    m_wiimote_device_boxes[i]->setEnabled(enable_emu_bt && m_wiimote_separate_audio->isChecked());
 
     const bool is_emu_wiimote = m_wiimote_boxes[i]->currentIndex() == 1;
     m_wiimote_buttons[i]->setEnabled(enable_emu_bt && is_emu_wiimote &&
@@ -465,6 +491,8 @@ void WiimoteControllersWidget::SaveSettings()
     Config::ConfigChangeCallbackGuard config_guard;
     Config::SetBaseOrCurrent(Config::MAIN_WIIMOTE_ENABLE_SPEAKER,
                              m_wiimote_speaker_data->isChecked());
+    Config::SetBaseOrCurrent(Config::MAIN_WIIMOTE_SEPARATE_AUDIO,
+                             m_wiimote_separate_audio->isChecked());
     Config::SetBaseOrCurrent(Config::MAIN_CONNECT_WIIMOTES_FOR_CONTROLLER_INTERFACE,
                              m_wiimote_ciface->isChecked());
     Config::SetBaseOrCurrent(Config::MAIN_WIIMOTE_CONTINUOUS_SCANNING,
@@ -480,6 +508,10 @@ void WiimoteControllersWidget::SaveSettings()
     {
       const int index = m_wiimote_boxes[i]->currentIndex();
       Config::SetBaseOrCurrent(Config::GetInfoForWiimoteSource(int(i)), WiimoteSource(index));
+#ifdef _WIN32
+      Config::SetBaseOrCurrent(Config::MAIN_WIIMOTE_WASAPI_DEVICES[i],
+                               m_wiimote_device_boxes[i]->currentData().toString().toStdString());
+#endif
     }
   }
 

@@ -44,6 +44,17 @@ static std::unique_ptr<SoundStream> CreateSoundStreamForBackend(std::string_view
   return {};
 }
 
+static std::unique_ptr<SoundStream> CreateSoundStreamForBackend(std::string_view backend,
+                                                               const std::string& device)
+{
+  auto stream = CreateSoundStreamForBackend(backend);
+#ifdef _WIN32
+  if (stream && backend == BACKEND_WASAPI)
+    static_cast<WASAPIStream*>(stream.get())->SetDevice(device);
+#endif
+  return stream;
+}
+
 void InitSoundStream(Core::System& system)
 {
   std::string backend = Config::Get(Config::MAIN_AUDIO_BACKEND);
@@ -74,6 +85,8 @@ void PostInitSoundStream(Core::System& system)
   UpdateSoundStream(system);
   SetSoundStreamRunning(system, true);
 
+  InitWiimoteSoundStreams(system);
+
   if (Config::Get(Config::MAIN_DUMP_AUDIO) && !system.IsAudioDumpStarted())
     StartAudioDump(system);
 }
@@ -86,6 +99,7 @@ void ShutdownSoundStream(Core::System& system)
     StopAudioDump(system);
 
   SetSoundStreamRunning(system, false);
+  ShutdownWiimoteSoundStreams(system);
   system.SetSoundStream(nullptr);
 
   INFO_LOG_FMT(AUDIO, "Done shutting down sound stream");
@@ -188,6 +202,41 @@ void SetSoundStreamRunning(Core::System& system, bool running)
     ERROR_LOG_FMT(AUDIO, "Error starting stream.");
   else
     ERROR_LOG_FMT(AUDIO, "Error stopping stream.");
+}
+
+void InitWiimoteSoundStreams(Core::System& system)
+{
+  if (!Config::Get(Config::MAIN_WIIMOTE_SEPARATE_AUDIO))
+    return;
+
+  const std::string backend = Config::Get(Config::MAIN_AUDIO_BACKEND);
+  for (size_t i = 0; i < 4; ++i)
+  {
+#ifdef _WIN32
+    const std::string device = Config::Get(MAIN_WIIMOTE_WASAPI_DEVICES[i]);
+#else
+    const std::string device;
+#endif
+    auto stream = CreateSoundStreamForBackend(backend, device);
+    if (stream && stream->Init())
+    {
+      stream->SetRunning(true);
+      system.SetWiimoteSoundStream(i, std::move(stream));
+    }
+  }
+}
+
+void ShutdownWiimoteSoundStreams(Core::System& system)
+{
+  for (size_t i = 0; i < 4; ++i)
+  {
+    SoundStream* stream = system.GetWiimoteSoundStream(i);
+    if (stream)
+    {
+      stream->SetRunning(false);
+      system.SetWiimoteSoundStream(i, nullptr);
+    }
+  }
 }
 
 void SendAIBuffer(Core::System& system, const short* samples, unsigned int num_samples)

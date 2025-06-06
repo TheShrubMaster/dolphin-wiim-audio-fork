@@ -31,6 +31,9 @@ public:
 
   void SetSpeakerEnabled(bool enabled);
 
+  void SetIndex(u8 index) { m_index = index; }
+  u8 GetIndex() const { return m_index; }
+
 private:
   // Pan is -1.0 to +1.0
   void SpeakerData(const u8* data, int length, float speaker_pan);
@@ -75,6 +78,7 @@ private:
   ControllerEmu::SettingValue<double> m_speaker_pan_setting;
 
   bool m_speaker_enabled = false;
+  u8 m_index = 0;
 };
 
 }  // namespace WiimoteEmu

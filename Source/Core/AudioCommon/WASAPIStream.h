@@ -35,6 +35,7 @@ public:
   ~WASAPIStream();
   bool Init() override;
   bool SetRunning(bool running) override;
+  void SetDevice(const std::string& device) { m_device = device; }
 
   static bool IsValid();
   static std::vector<std::string> GetAvailableDevices();
@@ -56,5 +57,6 @@ private:
   Microsoft::WRL::ComPtr<IAudioRenderClient> m_audio_renderer;
   wil::unique_event_nothrow m_need_data_event;
   WAVEFORMATEXTENSIBLE m_format;
+  std::string m_device = "default";
 #endif  // _WIN32
 };

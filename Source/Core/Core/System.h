@@ -153,6 +153,8 @@ public:
 
   SoundStream* GetSoundStream() const;
   void SetSoundStream(std::unique_ptr<SoundStream> sound_stream);
+  SoundStream* GetWiimoteSoundStream(size_t index) const;
+  void SetWiimoteSoundStream(size_t index, std::unique_ptr<SoundStream> stream);
   bool IsSoundStreamRunning() const;
   void SetSoundStreamRunning(bool running);
   bool IsAudioDumpStarted() const;

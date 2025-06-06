@@ -4,6 +4,7 @@
 #include "Core/Config/MainSettings.h"
 
 #include <sstream>
+#include <array>
 
 #include <fmt/format.h>
 
@@ -193,6 +194,14 @@ const Info<bool> MAIN_WIIMOTE_CONTINUOUS_SCANNING{
 const Info<std::string> MAIN_WIIMOTE_AUTO_CONNECT_ADDRESSES{
     {System::Main, "Core", "WiimoteAutoConnectAddresses"}, ""};
 const Info<bool> MAIN_WIIMOTE_ENABLE_SPEAKER{{System::Main, "Core", "WiimoteEnableSpeaker"}, false};
+const Info<bool> MAIN_WIIMOTE_SEPARATE_AUDIO{{System::Main, "Core", "WiimoteSeparateAudio"}, false};
+#ifdef _WIN32
+const std::array<Info<std::string>, 4> MAIN_WIIMOTE_WASAPI_DEVICES{
+    Info<std::string>{{System::Main, "Core", "Wiimote1WASAPIDevice"}, "default"},
+    Info<std::string>{{System::Main, "Core", "Wiimote2WASAPIDevice"}, "default"},
+    Info<std::string>{{System::Main, "Core", "Wiimote3WASAPIDevice"}, "default"},
+    Info<std::string>{{System::Main, "Core", "Wiimote4WASAPIDevice"}, "default"}};
+#endif
 const Info<bool> MAIN_CONNECT_WIIMOTES_FOR_CONTROLLER_INTERFACE{
     {System::Main, "Core", "WiimoteControllerInterface"}, false};
 const Info<bool> MAIN_MMU{{System::Main, "Core", "MMU"}, false};
