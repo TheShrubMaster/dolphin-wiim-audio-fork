@@ -10,6 +10,7 @@
 #include "Common/CommonTypes.h"
 #include "Common/Logging/Log.h"
 
+#include "Core/Config/MainSettings.h"
 #include "Core/ConfigManager.h"
 #include "Core/HW/WiimoteEmu/WiimoteEmu.h"
 #include "Core/System.h"
