@@ -213,7 +213,7 @@ void InitWiimoteSoundStreams(Core::System& system)
   for (size_t i = 0; i < 4; ++i)
   {
 #ifdef _WIN32
-    const std::string device = Config::Get(MAIN_WIIMOTE_WASAPI_DEVICES[i]);
+    const std::string device = Config::Get(Config::MAIN_WIIMOTE_WASAPI_DEVICES[i]);
 #else
     const std::string device;
 #endif
