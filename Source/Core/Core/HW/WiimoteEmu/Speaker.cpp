@@ -128,8 +128,17 @@ void SpeakerLogic::SpeakerData(const u8* data, int length, float speaker_pan)
   const u32 r_volume = std::min(u32(std::min(1.f + speaker_pan, 1.f) * volume), 255u);
 
   auto& system = Core::System::GetInstance();
+
   SoundStream* main_stream = system.GetSoundStream();
   SoundStream* output_stream = main_stream;
+
+  SoundStream* sound_stream = system.GetSoundStream();
+  if (Config::Get(Config::MAIN_WIIMOTE_SEPARATE_AUDIO) && m_parent)
+  {
+    if (SoundStream* wm_stream = system.GetWiimoteSoundStream(m_parent->GetWiimoteDeviceIndex()))
+      sound_stream = wm_stream;
+  }
+
 
   if (Config::Get(Config::MAIN_WIIMOTE_SEPARATE_AUDIO) && m_parent)
   {
