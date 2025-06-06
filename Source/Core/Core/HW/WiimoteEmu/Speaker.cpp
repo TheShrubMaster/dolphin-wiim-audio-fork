@@ -128,6 +128,11 @@ void SpeakerLogic::SpeakerData(const u8* data, int length, float speaker_pan)
 
   auto& system = Core::System::GetInstance();
   SoundStream* sound_stream = system.GetSoundStream();
+  if (Config::Get(Config::MAIN_WIIMOTE_SEPARATE_AUDIO) && m_parent)
+  {
+    if (SoundStream* wm_stream = system.GetWiimoteSoundStream(m_parent->GetWiimoteDeviceIndex()))
+      sound_stream = wm_stream;
+  }
 
   sound_stream->GetMixer()->SetWiimoteSpeakerVolume(l_volume, r_volume);
 
