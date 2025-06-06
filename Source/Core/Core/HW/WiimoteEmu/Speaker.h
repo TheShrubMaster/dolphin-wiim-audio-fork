@@ -30,6 +30,7 @@ public:
   void DoState(PointerWrap& p);
 
   void SetSpeakerEnabled(bool enabled);
+  void SetParent(Wiimote* parent) { m_parent = parent; }
 
 private:
   // Pan is -1.0 to +1.0
@@ -75,6 +76,8 @@ private:
   ControllerEmu::SettingValue<double> m_speaker_pan_setting;
 
   bool m_speaker_enabled = false;
+
+  Wiimote* m_parent = nullptr;
 };
 
 }  // namespace WiimoteEmu
