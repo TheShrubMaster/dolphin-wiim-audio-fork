@@ -128,6 +128,10 @@ void SpeakerLogic::SpeakerData(const u8* data, int length, float speaker_pan)
   const u32 r_volume = std::min(u32(std::min(1.f + speaker_pan, 1.f) * volume), 255u);
 
   auto& system = Core::System::GetInstance();
+
+  SoundStream* main_stream = system.GetSoundStream();
+  SoundStream* output_stream = main_stream;
+
   SoundStream* sound_stream = system.GetSoundStream();
   if (Config::Get(Config::MAIN_WIIMOTE_SEPARATE_AUDIO) && m_parent)
   {
@@ -135,11 +139,21 @@ void SpeakerLogic::SpeakerData(const u8* data, int length, float speaker_pan)
       sound_stream = wm_stream;
   }
 
-  sound_stream->GetMixer()->SetWiimoteSpeakerVolume(l_volume, r_volume);
+
+  if (Config::Get(Config::MAIN_WIIMOTE_SEPARATE_AUDIO) && m_parent)
+  {
+    if (SoundStream* wm_stream = system.GetWiimoteSoundStream(m_parent->GetWiimoteDeviceIndex()))
+      output_stream = wm_stream;
+  }
+
+  if (output_stream != main_stream)
+    main_stream->GetMixer()->SetWiimoteSpeakerVolume(0, 0);
+
+  output_stream->GetMixer()->SetWiimoteSpeakerVolume(l_volume, r_volume);
 
   // ADPCM sample rate is thought to be x2.(3000 x2 = 6000).
   const unsigned int sample_rate = sample_rate_dividend / reg_data.sample_rate;
-  sound_stream->GetMixer()->PushWiimoteSpeakerSamples(
+  output_stream->GetMixer()->PushWiimoteSpeakerSamples(
       samples.data(), sample_length, Mixer::FIXED_SAMPLE_RATE_DIVIDEND / (sample_rate * 2));
 }
 
