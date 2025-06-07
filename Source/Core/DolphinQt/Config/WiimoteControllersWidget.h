@@ -42,7 +42,6 @@ private:
       const std::vector<IOS::HLE::BluetoothRealDevice::BluetoothDeviceInfo>& devices);
   void OnWiimoteRefreshPressed();
   void OnWiimoteConfigure(size_t index);
-  void OnTestWiimoteAudio(size_t index);
   void StartBluetoothAdapterRefresh();
   void UpdateBluetoothAdapterWidgetsEnabled(Core::State state);
 
@@ -73,7 +72,6 @@ private:
   QCheckBox* m_wiimote_speaker_data;
   QCheckBox* m_wiimote_separate_audio;
   std::array<QComboBox*, 4> m_wiimote_device_boxes;
-  std::array<QPushButton*, 4> m_wiimote_test_buttons;
   QCheckBox* m_wiimote_ciface;
   QPushButton* m_wiimote_refresh;
   QLabel* m_bluetooth_unavailable;
