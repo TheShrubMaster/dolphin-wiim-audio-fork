@@ -6,6 +6,9 @@
 #include <fmt/chrono.h>
 #include <fmt/format.h>
 
+#include <cmath>
+#include <numbers>
+#include <vector>
 #include "AudioCommon/AlsaSoundStream.h"
 #include "AudioCommon/CubebStream.h"
 #include "AudioCommon/Mixer.h"
@@ -45,7 +48,7 @@ static std::unique_ptr<SoundStream> CreateSoundStreamForBackend(std::string_view
 }
 
 static std::unique_ptr<SoundStream> CreateSoundStreamForBackend(std::string_view backend,
-                                                               const std::string& device)
+                                                                const std::string& device)
 {
   auto stream = CreateSoundStreamForBackend(backend);
 #ifdef _WIN32
@@ -317,5 +320,32 @@ void ToggleMuteVolume(Core::System& system)
   bool isMuted = Config::Get(Config::MAIN_AUDIO_MUTED);
   Config::SetBaseOrCurrent(Config::MAIN_AUDIO_MUTED, !isMuted);
   UpdateSoundStream(system);
+}
+
+void PlayWiimoteSpeakerTestTone(Core::System& system, size_t index)
+{
+  SoundStream* stream = nullptr;
+  if (Config::Get(Config::MAIN_WIIMOTE_SEPARATE_AUDIO))
+    stream = system.GetWiimoteSoundStream(index);
+  if (!stream)
+    stream = system.GetSoundStream();
+  if (!stream)
+    return;
+
+  constexpr u32 sample_rate = 3000;
+  constexpr u32 duration_ms = 200;
+  constexpr float frequency = 1000.0f;
+  const u32 num_samples = sample_rate * duration_ms / 1000;
+  std::vector<s16> samples(num_samples);
+  for (u32 i = 0; i < num_samples; ++i)
+  {
+    const float t = static_cast<float>(i) / sample_rate;
+    samples[i] =
+        static_cast<s16>(std::sin(2.0f * std::numbers::pi_v<float> * frequency * t) * 0x4000);
+  }
+
+  const u32 rate_divisor = Mixer::FIXED_SAMPLE_RATE_DIVIDEND / (sample_rate * 2);
+  stream->GetMixer()->SetWiimoteSpeakerVolume(255, 255);
+  stream->GetMixer()->PushWiimoteSpeakerSamples(samples.data(), num_samples, rate_divisor);
 }
 }  // namespace AudioCommon
