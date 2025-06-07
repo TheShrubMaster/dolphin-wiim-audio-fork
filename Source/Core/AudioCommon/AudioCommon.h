@@ -39,4 +39,5 @@ void StopAudioDump(Core::System& system);
 void IncreaseVolume(Core::System& system, unsigned short offset);
 void DecreaseVolume(Core::System& system, unsigned short offset);
 void ToggleMuteVolume(Core::System& system);
+void PlayWiimoteSpeakerTestTone(Core::System& system, size_t index);
 }  // namespace AudioCommon
